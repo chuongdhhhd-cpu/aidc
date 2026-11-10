@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ACDI Check – Đo mức lệ thuộc nhận thức vào AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--bg:#f2f5f9;--surface:#fff;--ink:#14213d;--muted:#5b6780;--line:#d9e0ea;--accent:#0b7a75;--accent-ink:#fff;--l1:#2e9e5b;--l2:#d4a017;--l3:#e07b24;--l4:#c9372c;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1626;--surface:#18223a;--ink:#eef2fa;--muted:#9aa7c2;--line:#2b3753;--accent:#3fc1b9;--accent-ink:#0f1626;--l1:#4cc57d;--l2:#e8bb3c;--l3:#f09a48;--l4:#ef6a5e}}
+:root[data-theme="dark"]{--bg:#0f1626;--surface:#18223a;--ink:#eef2fa;--muted:#9aa7c2;--line:#2b3753;--accent:#3fc1b9;--accent-ink:#0f1626;--l1:#4cc57d;--l2:#e8bb3c;--l3:#f09a48;--l4:#ef6a5e}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;font-size:16px}
+main{max-width:680px;margin:0 auto;padding:20px 18px 48px}
+h1{font-size:clamp(2rem,7vw,2.9rem);line-height:1.1;margin:8px 0 12px;font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.25rem;line-height:1.35;margin:0 0 12px;font-weight:700}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.brand{font-weight:700;color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px}
+.btn{font:inherit;font-weight:600;border:0;border-radius:12px;padding:13px 22px;cursor:pointer;background:var(--accent);color:var(--accent-ink);min-height:48px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.pt:focus-visible,.opt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 24px;padding:0;list-style:none}
+.tags li{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.88rem;background:var(--surface)}
+.bar{height:6px;background:var(--line);border-radius:9px;overflow:hidden;margin-bottom:8px}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.meta{display:flex;justify-content:space-between;font-size:.88rem;color:var(--muted);margin-bottom:18px}
+.q{font-size:1.2rem;font-weight:600;line-height:1.5;margin-bottom:22px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.pt{font:inherit;font-weight:700;font-size:1.15rem;height:56px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.pt[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ends{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);margin-top:8px}
+.opt{display:block;width:100%;text-align:left;font:inherit;padding:14px 16px;margin-bottom:10px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;line-height:1.45}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+.nav{display:flex;justify-content:space-between;margin-top:20px}
+.lvl{border-left:8px solid var(--c);padding-left:16px;margin:4px 0 20px}
+.lvl .n{font-size:3rem;font-weight:800;line-height:1;color:var(--c)}
+.lvl .t{font-size:1.4rem;font-weight:800}
+.scalebar{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:14px 0 4px}
+.scalebar span{height:10px;border-radius:5px;background:var(--c);opacity:.28}
+.scalebar span.on{opacity:1}
+.scorelist{display:grid;gap:10px;margin:8px 0 0;padding:0;list-style:none}
+.scorelist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:.95rem}
+.scorelist .track{grid-column:1/-1;height:8px;border-radius:5px;background:var(--line);overflow:hidden}
+.scorelist .track i{display:block;height:100%;background:var(--accent)}
+.scorelist .top .track i{background:var(--l4)}
+svg{max-width:100%;height:auto;display:block;margin:0 auto}
+.rule{background:var(--bg);border-radius:12px;padding:14px 16px;font-weight:600;margin-top:14px}
+.stack>*+*{margin-top:18px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+var COMP={
+ ID:{name:"Lệ thuộc khởi động",tip:"Bạn đang mở AI trước khi tự nghĩ. Hãy tự xác định hướng giải trước khi hỏi AI: ghi ra 2–3 ý hoặc bước đầu tiên của riêng mình."},
+ CPD:{name:"Chuyển giao xử lý nhận thức",tip:"AI đang làm phần tư duy chính. Chỉ nhờ AI gợi ý hoặc giải thích một bước, rồi tự phân tích và tự tìm thêm một cách giải khác."},
+ JD:{name:"Lệ thuộc phán đoán",tip:"Bạn dễ chấp nhận câu trả lời của AI. Hãy kiểm chứng ít nhất một nguồn khác và thử tìm một điểm chưa hợp lý trước khi dùng kết quả."},
+ IPL:{name:"Suy giảm khả năng tự thực hiện",tip:"Bạn khó làm lại khi không có AI. Sau mỗi lần được AI hỗ trợ, hãy làm lại một bài tương tự không dùng AI và tự giải thích bằng lời của mình."}
+};
+var ITEMS=[
+ ["ID1","ID","Khi nhận một nhiệm vụ khó, tôi thường mở AI trước khi tự xác định cách giải quyết."],
+ ["ID2","ID","Khi chưa có gợi ý từ AI, tôi gặp khó khăn trong việc xác định bước đầu tiên."],
+ ["ID3","ID","Tôi có thể tự xây dựng hướng giải quyết ban đầu trước khi hỏi AI.",true],
+ ["CPD1","CPD","Tôi thường để AI thực hiện phần phân tích hoặc lập luận khó của nhiệm vụ."],
+ ["CPD2","CPD","Khi AI đã đưa ra cách giải, tôi thường không tự tìm thêm cách giải khác."],
+ ["CPD3","CPD","Tôi từng sử dụng nội dung do AI tạo dù chưa hiểu đầy đủ cách nội dung đó được hình thành."],
+ ["JD1","JD","Khi câu trả lời của AI có vẻ hợp lý, tôi thường chấp nhận mà không kiểm tra bằng nguồn khác."],
+ ["JD2","JD","Tôi khó nhận ra lỗi hoặc điểm thiếu hợp lý trong câu trả lời do AI tạo."],
+ ["JD3","JD","Tôi thường tự kiểm tra bằng chứng trước khi chấp nhận kết luận của AI.",true],
+ ["IPL1","IPL","Sau khi được AI hỗ trợ, tôi gặp khó khăn khi phải tự giải quyết một nhiệm vụ tương tự."],
+ ["IPL2","IPL","Tôi khó giải thích bằng lời của mình một số nội dung mà AI đã giúp tôi hoàn thành."],
+ ["IPL3","IPL","Khi không được sử dụng AI, chất lượng bài làm của tôi giảm rõ rệt."]
+];
+// Mỗi đáp án A→D tương ứng điểm lệ thuộc 4→1
+var SCEN=[
+ ["Kiểm chứng thông tin","AI đưa ra một câu trả lời khác với nội dung bạn đã học. Bạn sẽ làm gì?",["Sử dụng câu trả lời của AI vì AI có nhiều thông tin.","Chọn câu trả lời mà tôi cảm thấy hợp lý hơn.","Kiểm tra lại bằng một nguồn khác.","Đối chiếu nhiều nguồn, xem xét bằng chứng rồi mới đưa ra kết luận."]],
+ ["Giải quyết nhiệm vụ","Bạn được giao một nhiệm vụ học tập và được phép sử dụng AI. Bạn sẽ:",["Yêu cầu AI đưa ra đáp án hoàn chỉnh.","Yêu cầu AI hướng dẫn từng bước rồi làm theo.","Tự thử giải trước, khi gặp khó khăn mới yêu cầu AI gợi ý.","Tự hoàn thành phương án trước rồi sử dụng AI để kiểm tra hoặc phản biện."]],
+ ["Phát hiện lỗi","AI cung cấp một lời giải có kết quả đúng nhưng một bước lập luận chưa hợp lý. Bạn sẽ:",["Chấp nhận vì kết quả cuối cùng đúng.","Chỉnh lại kết quả theo cách mình nghĩ.","Xác định bước chưa hợp lý.","Xác định bước chưa hợp lý và giải thích vì sao lập luận đó không đúng."]],
+ ["Khả năng tự thực hiện","Sau khi dùng AI để học một dạng bài, bạn gặp một bài tương tự trong bài kiểm tra không được sử dụng AI. Tình huống nào gần với bạn nhất?",["Tôi thường không biết bắt đầu từ đâu.","Tôi nhớ cách AI làm nhưng khó giải thích tại sao.","Tôi có thể tự làm phần lớn bài.","Tôi có thể tự làm và giải thích được cách giải."]]
+];
+// Ngưỡng điểm ACDI (trung bình 1–5) – có thể chỉnh tại đây
+var LEVELS=[
+ {n:1,max:2.0,name:"Chủ động",c:"var(--l1)",desc:"Bạn dùng AI chủ yếu để tham khảo và kiểm tra. Bạn vẫn là người suy nghĩ chính.",aim:"Duy trì thói quen hiện tại."},
+ {n:2,max:3.0,name:"Có dấu hiệu lệ thuộc",c:"var(--l2)",desc:"Bạn bắt đầu dựa vào AI ở một số nhiệm vụ.",aim:"Điều chỉnh cách sử dụng AI."},
+ {n:3,max:4.0,name:"Lệ thuộc đáng chú ý",c:"var(--l3)",desc:"Bạn thường giao một phần quá trình suy nghĩ cho AI.",aim:"Cần can thiệp vào hành vi sử dụng AI."},
+ {n:4,max:5.01,name:"Nguy cơ cao",c:"var(--l4)",desc:"Bạn khó khởi động, đánh giá hoặc tự thực hiện khi thiếu AI.",aim:"Cần giảm việc để AI thay thế tư duy."}
+];
+var total=ITEMS.length+SCEN.length, ans=[], step=-1, app=document.getElementById("app"), collectOptIn=false, uploadAttempted=false;
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function intro(){
+ step=-1;ans=[];collectOptIn=false;uploadAttempted=false;
+ app.innerHTML='<p class="brand">ACDI Check</p><h1>Bạn đang dùng AI, hay AI đang nghĩ thay bạn?</h1>'+
+ '<p class="muted">Bài tự đánh giá mức lệ thuộc nhận thức vào AI (AI Cognitive Dependency Index) dành cho học sinh THCS. Không cấm dùng AI, chỉ giúp bạn nhận ra cách dùng của mình.</p>'+
+ '<ul class="tags"><li>12 câu hỏi thang 1–5</li><li>4 tình huống</li><li>Khoảng 5 phút</li></ul>'+
+ '<div class="card stack"><p>Hãy trả lời đúng với những gì bạn thường làm, không có đáp án đúng hay sai. Nếu không chọn chia sẻ, kết quả chỉ hiển thị trên máy của bạn.</p><label style="display:block;padding:12px 0"><input type="checkbox" id="shareData"> Tôi đồng ý chia sẻ ẩn danh điểm ACDI, điểm 4 thành phần, điểm tình huống và mức kết quả để tạo thống kê chung.</label><p class="muted" style="font-size:.9rem">Không thu tên, lớp, email hoặc câu trả lời từng câu. Bạn có thể bỏ chọn; bài kiểm tra vẫn hoạt động bình thường.</p><button class="btn" id="go">Bắt đầu</button> <a class="btn ghost" href="/dashboard">Xem thống kê chung</a></div>';
+ document.getElementById("go").onclick=function(){collectOptIn=document.getElementById("shareData").checked;step=0;draw()};
+}
+function draw(){
+ var isLik=step<ITEMS.length, pct=Math.round(step/total*100), h;
+ h='<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+total+'" aria-valuenow="'+step+'"><i style="width:'+pct+'%"></i></div>';
+ h+='<div class="meta"><span>Câu '+(step+1)+' / '+total+'</span><span>'+(isLik?esc(COMP[ITEMS[step][1]].name):"Tình huống: "+esc(SCEN[step-ITEMS.length][0]))+'</span></div><div class="card">';
+ if(isLik){
+  h+='<p class="q">'+esc(ITEMS[step][2])+'</p><div class="scale" role="group" aria-label="Mức độ đồng ý">';
+  for(var v=1;v<=5;v++)h+='<button class="pt" data-v="'+v+'" aria-pressed="'+(ans[step]===v)+'" aria-label="'+v+' trên 5">'+v+'</button>';
+  h+='</div><div class="ends"><span>1 – Hoàn toàn không đúng</span><span>5 – Hoàn toàn đúng</span></div>';
+ }else{
+  var s=SCEN[step-ITEMS.length];
+  h+='<p class="q">'+esc(s[1])+'</p>';
+  s[2].forEach(function(t,i){h+='<button class="opt" data-v="'+(4-i)+'" aria-pressed="'+(ans[step]===4-i)+'"><b>'+"ABCD"[i]+".</b> "+esc(t)+'</button>'});
+ }
+ h+='<div class="nav"><button class="btn ghost" id="back">'+(step?"Quay lại":"Trang đầu")+'</button>'+(ans[step]!=null?'<button class="btn" id="next">'+(step===total-1?"Xem kết quả":"Tiếp tục")+'</button>':'<span></span>')+'</div></div>';
+ app.innerHTML=h;
+ [].forEach.call(app.querySelectorAll("[data-v]"),function(b){b.onclick=function(){ans[step]=+b.dataset.v;if(step===total-1){draw()}else{step++;draw()}}});
+ document.getElementById("back").onclick=function(){if(step)step--;else return intro();draw()};
+ var nx=document.getElementById("next");if(nx)nx.onclick=function(){if(step===total-1)result();else{step++;draw()}};
+ window.scrollTo(0,0);
+}
+function mean(a){return a.reduce(function(x,y){return x+y},0)/a.length}
+function result(){
+ var sc={ID:[],CPD:[],JD:[],IPL:[]},all=[];
+ ITEMS.forEach(function(it,i){var v=it[3]?6-ans[i]:ans[i];sc[it[1]].push(v);all.push(v)});
+ var acdi=mean(all),comp={},keys=Object.keys(COMP);
+ keys.forEach(function(k){comp[k]=mean(sc[k])});
+ var scen=mean(ans.slice(ITEMS.length));
+ var lv=LEVELS.filter(function(l){return acdi<l.max})[0];
+ var top=keys.reduce(function(a,b){return comp[b]>comp[a]?b:a});
+ var h='<p class="brand">ACDI Check · Kết quả của bạn</p><div class="card stack">'+
+ '<div class="lvl" style="--c:'+lv.c+'"><div class="n">'+acdi.toFixed(2)+'<span class="muted" style="font-size:1rem;font-weight:500"> / 5</span></div><div class="t">Mức '+lv.n+' – '+lv.name+'</div></div>'+
+ '<div class="scalebar" style="--c:'+lv.c+'" aria-hidden="true">'+[1,2,3,4].map(function(n){return '<span class="'+(n<=lv.n?"on":"")+'"></span>'}).join("")+'</div>'+
+ '<p>'+lv.desc+' <b>Định hướng: '+lv.aim+'</b></p></div>';
+ h+='<div class="card stack" style="margin-top:18px"><h2>Hồ sơ 4 thành phần</h2>'+radar(comp,keys,top)+'<ul class="scorelist">'+keys.map(function(k){return '<li class="'+(k===top?"top":"")+'"><span>'+k+' – '+COMP[k].name+'</span><b>'+comp[k].toFixed(2)+'</b><span class="track"><i style="width:'+((comp[k]-1)/4*100)+'%"></i></span></li>'}).join("")+'</ul>'+
+ '<p class="muted" style="font-size:.9rem;margin-top:12px">Điểm càng cao thì nguy cơ lệ thuộc càng lớn. Câu ID3 và JD3 đã được tự động đảo điểm.</p></div>';
+ h+='<div class="card stack" style="margin-top:18px"><h2>Khuyến nghị cho bạn</h2><p><b>Thành phần nổi bật: '+top+' – '+COMP[top].name+'.</b> '+(lv.n===1?"Bạn đang làm tốt. Thành phần này là chỗ cần để ý nhất, hãy giữ thói quen: ":"")+COMP[top].tip+'</p>'+
+ '<p>Điểm 4 tình huống: <b>'+scen.toFixed(2)+' / 4</b> ('+(scen>=3?"hành vi thực tế đang nghiêng về dựa vào AI":scen>=2?"hành vi thực tế ở mức trung gian":"hành vi thực tế khá chủ động")+').</p>'+
+ '<div class="rule">Tự nghĩ trước – Hỏi AI sau – Kiểm chứng lại – Tự làm được.</div></div>';
+	 h+=collectOptIn?'<p id="saveStatus" class="muted" style="margin-top:16px">Đang gửi điểm tổng hợp ẩn danh…</p>':'<p class="muted" style="margin-top:16px">Bạn không chọn chia sẻ; kết quả chỉ hiển thị trên thiết bị này.</p>';
+	 h+='<div class="nav" style="margin-top:20px"><button class="btn ghost" id="print">In kết quả</button><a class="btn ghost" href="/dashboard">Thống kê chung</a><button class="btn" id="again">Làm lại</button></div>'+
+	 '<p class="muted" style="font-size:.85rem;margin-top:18px">Kết quả nhằm giúp bạn tự nhận diện, không dùng để gắn nhãn học sinh.</p>';
+	 app.innerHTML=h;
+	 document.getElementById("again").onclick=intro;
+ document.getElementById("print").onclick=function(){window.print()};
+ if(collectOptIn&&!uploadAttempted){
+  uploadAttempted=true;
+  fetch("/api/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({consent:true,acdi:acdi,components:comp,scenario:scen,level:lv.n})})
+   .then(function(r){if(!r.ok)throw new Error("submit failed");return r.json()})
+   .then(function(){var el=document.getElementById("saveStatus");if(el)el.textContent="Cảm ơn bạn — điểm tổng hợp đã được lưu ẩn danh để tạo thống kê chung."})
+   .catch(function(){var el=document.getElementById("saveStatus");if(el)el.textContent="Không gửi được dữ liệu lúc này. Kết quả của bạn vẫn hiển thị trên thiết bị; bạn không cần làm lại."});
+ }
+ window.scrollTo(0,0);
+}
+function radar(c,keys,top){
+ var cx=150,cy=140,R=95,dir=[[0,-1],[1,0],[0,1],[-1,0]];
+ function P(i,v){var r=R*(v-1)/4;return(cx+dir[i][0]*r)+","+(cy+dir[i][1]*r)}
+ var s='<svg viewBox="0 0 300 280" role="img" aria-label="Biểu đồ 4 thành phần ACDI">';
+ for(var g=1;g<=4;g++){s+='<polygon points="'+[0,1,2,3].map(function(i){return P(i,1+g)}).join(" ")+'" fill="none" stroke="var(--line)"/>'}
+ [0,1,2,3].forEach(function(i){s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+P(i,5).split(",")[0]+'" y2="'+P(i,5).split(",")[1]+'" stroke="var(--line)"/>'});
+ s+='<polygon points="'+[0,1,2,3].map(function(i){return P(i,c[keys[i]])}).join(" ")+'" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>';
+ var lp=[[150,22,"middle"],[262,144,"start"],[150,262,"middle"],[38,144,"end"]];
+ keys.forEach(function(k,i){var p=P(i,c[k]).split(",");s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5" fill="'+(k===top?"var(--l4)":"var(--accent)")+'"/>'+
+  '<text x="'+lp[i][0]+'" y="'+lp[i][1]+'" text-anchor="'+lp[i][2]+'" font-size="14" font-weight="700" fill="var(--ink)">'+k+'</text>'});
+ return s+'</svg>';
+}
+intro();
+</script>
+</body>
+</html>
