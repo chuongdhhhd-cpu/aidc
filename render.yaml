@@ -16,3 +16,7 @@ services:
         value: 0.0.0.0
       - key: ACDI_MIN_GROUP_SIZE
         value: "1"
+      - key: ACDI_KEEPALIVE
+        value: "1"
+      - key: ACDI_KEEPALIVE_INTERVAL
+        value: "600"

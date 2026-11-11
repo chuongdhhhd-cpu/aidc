@@ -8,7 +8,9 @@ import json
 import math
 import os
 import sys
+import threading
 import time
+import urllib.request
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -27,6 +29,15 @@ MIN_GROUP_SIZE = max(1, int(os.environ.get("ACDI_MIN_GROUP_SIZE", "1")))
 COMPONENTS = ("ID", "CPD", "JD", "IPL")
 # Password for the private dashboard and /api/stats. If unset, they stay locked.
 ADMIN_TOKEN = os.environ.get("ACDI_ADMIN_TOKEN", "").strip()
+# Keep-alive: Render free web services spin down after ~15 min without inbound
+# traffic. The service pings its own public /health URL to stay awake.
+# RENDER_EXTERNAL_URL is set automatically by Render; override with ACDI_KEEPALIVE_URL.
+KEEPALIVE_URL = (
+    os.environ.get("ACDI_KEEPALIVE_URL") or os.environ.get("RENDER_EXTERNAL_URL") or ""
+).strip().rstrip("/")
+KEEPALIVE_ENABLED = os.environ.get("ACDI_KEEPALIVE", "1").strip().lower() not in ("0", "false", "no", "off")
+# Must stay below Render's 15-minute idle limit.
+KEEPALIVE_INTERVAL = min(max(60, int(os.environ.get("ACDI_KEEPALIVE_INTERVAL", "600"))), 840)
 
 
 def connect_db() -> psycopg.Connection:
@@ -120,6 +131,27 @@ def get_stats() -> dict[str, object]:
         "overall": overall,
         "series": series,
     }
+
+
+def keepalive_loop() -> None:
+    """Ping our own /health endpoint periodically so Render does not spin us down."""
+    url = f"{KEEPALIVE_URL}/health"
+    request = urllib.request.Request(url, headers={"User-Agent": "acdi-keepalive/1.0"})
+    while True:
+        time.sleep(KEEPALIVE_INTERVAL)
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                response.read()
+        except Exception:
+            # Never let a failed ping crash the thread; try again next cycle.
+            pass
+
+
+def start_keepalive() -> None:
+    if not KEEPALIVE_ENABLED or not KEEPALIVE_URL:
+        return
+    threading.Thread(target=keepalive_loop, name="keepalive", daemon=True).start()
+    print(f"Keep-alive enabled: pinging /health every {KEEPALIVE_INTERVAL}s")
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -288,6 +320,7 @@ def main() -> None:
     if not ADMIN_TOKEN:
         print("ACDI_ADMIN_TOKEN is not set; dashboard and /api/stats are locked.", file=sys.stderr)
     server = ThreadingHTTPServer((HOST, PORT), Handler)
+    start_keepalive()
     print(f"ACDI Check backend ready: http://{HOST}:{PORT}")
     print(f"Dashboard: http://{HOST}:{PORT}/dashboard")
     print("Database: PostgreSQL (connection details hidden)")
