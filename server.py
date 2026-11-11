@@ -23,7 +23,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 # Render sets PORT; bind all interfaces there so its port scan can reach the app.
 HOST = os.environ.get("ACDI_HOST") or ("0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 PORT = int(os.environ.get("PORT", os.environ.get("ACDI_PORT", "8000")))
-MIN_GROUP_SIZE = max(5, int(os.environ.get("ACDI_MIN_GROUP_SIZE", "5")))
+MIN_GROUP_SIZE = max(1, int(os.environ.get("ACDI_MIN_GROUP_SIZE", "1")))
 COMPONENTS = ("ID", "CPD", "JD", "IPL")
 # Password for the private dashboard and /api/stats. If unset, they stay locked.
 ADMIN_TOKEN = os.environ.get("ACDI_ADMIN_TOKEN", "").strip()
@@ -81,7 +81,8 @@ def get_stats() -> dict[str, object]:
         return {
             "available": False,
             "minGroupSize": MIN_GROUP_SIZE,
-            "message": f"Thống kê sẽ hiển thị khi có ít nhất {MIN_GROUP_SIZE} lượt tham gia.",
+            "message": ("Chưa có lượt tham gia nào." if MIN_GROUP_SIZE <= 1
+                        else f"Thống kê sẽ hiển thị khi có ít nhất {MIN_GROUP_SIZE} lượt tham gia."),
         }
 
     sums = {
@@ -89,7 +90,7 @@ def get_stats() -> dict[str, object]:
         for key in COMPONENTS
     }
     levels = [sum(row[f"level_{i}"] for row in rows) for i in range(1, 5)]
-    safe_levels = [count if count >= MIN_GROUP_SIZE else None for count in levels]
+    safe_levels = [count if (count >= MIN_GROUP_SIZE or MIN_GROUP_SIZE <= 1) else None for count in levels]
     overall = {
         "count": total,
         "averageAcdi": round(sum(row["sum_acdi"] for row in rows) / total, 2),

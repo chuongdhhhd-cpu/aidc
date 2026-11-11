@@ -15,4 +15,4 @@ services:
       - key: ACDI_HOST
         value: 0.0.0.0
       - key: ACDI_MIN_GROUP_SIZE
-        value: "5"
+        value: "1"

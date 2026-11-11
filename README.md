@@ -26,7 +26,7 @@ Mở các đường dẫn local:
 - API thống kê: <http://127.0.0.1:8000/api/stats>
 - API nhận điểm: `POST http://127.0.0.1:8000/api/submit`
 
-Server ưu tiên biến `PORT` do Render cung cấp; nếu không có thì dùng `ACDI_PORT` hoặc cổng `8000`. `ACDI_HOST` mặc định là `127.0.0.1`; `ACDI_MIN_GROUP_SIZE` mặc định là 5 và không thể đặt thấp hơn 5.
+Server ưu tiên biến `PORT` do Render cung cấp; nếu không có thì dùng `ACDI_PORT` hoặc cổng `8000`. `ACDI_HOST` mặc định là `127.0.0.1`; `ACDI_MIN_GROUP_SIZE` mặc định là 1, tức là không quy định số lượt tối thiểu.
 
 ## Triển khai Render + Neon
 
@@ -44,7 +44,7 @@ Người làm bài phải chủ động đánh dấu ô đồng ý để điểm
 
 Database chỉ lưu cộng dồn theo ngày UTC: số lượt, tổng điểm ACDI, tổng điểm bốn thành phần ID/CPD/JD/IPL, tổng điểm tình huống và số lượng cộng dồn theo mức ACDI. Không tạo bản ghi từng người, không lưu câu trả lời từng câu, tên, lớp, email, số điện thoại, IP hoặc mã định danh. Ứng dụng không ghi log request/IP. Nhà cung cấp hosting, proxy hoặc Neon có thể có nhật ký vận hành riêng; chính sách đó không do ứng dụng kiểm soát.
 
-`GET /api/stats` chỉ công bố thống kê tổng quan khi có ít nhất 5 lượt. Số liệu theo từng mức và từng ngày chỉ được trả về nếu nhóm tương ứng đạt ngưỡng ít nhất 5; giá trị phân bố dưới ngưỡng được ẩn.
+`GET /api/stats` trả về thống kê tổng quan, theo từng mức và từng ngày ngay từ lượt đầu tiên (chỉ dành cho quản trị, cần mật khẩu). Đặt `ACDI_MIN_GROUP_SIZE` lớn hơn 1 nếu muốn bật lại ngưỡng ẩn nhóm nhỏ.
 
 ## API ghi nhận
 
@@ -60,7 +60,7 @@ Database chỉ lưu cộng dồn theo ngày UTC: số lượt, tổng điểm AC
 }
 ```
 
-Yêu cầu không có đồng ý bị trả HTTP 400. `GET /api/stats` trả JSON đã áp dụng ngưỡng ẩn nhóm nhỏ; `GET /health` trả JSON trạng thái `ok`.
+Yêu cầu không có đồng ý bị trả HTTP 400. `GET /api/stats` trả JSON thống kê (cần mật khẩu quản trị); `GET /health` trả JSON trạng thái `ok`.
 
 ## Lưu ý khi dùng với học sinh
 
