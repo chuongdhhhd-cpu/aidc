@@ -17,7 +17,8 @@ from psycopg.rows import dict_row
 ROOT = Path(__file__).resolve().parent
 STATIC = ROOT / "static"
 DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
-HOST = os.environ.get("ACDI_HOST", "127.0.0.1")
+# Render sets PORT; bind all interfaces there so its port scan can reach the app.
+HOST = os.environ.get("ACDI_HOST") or ("0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 PORT = int(os.environ.get("PORT", os.environ.get("ACDI_PORT", "8000")))
 MIN_GROUP_SIZE = max(5, int(os.environ.get("ACDI_MIN_GROUP_SIZE", "5")))
 COMPONENTS = ("ID", "CPD", "JD", "IPL")
