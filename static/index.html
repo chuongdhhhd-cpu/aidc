@@ -52,7 +52,43 @@ svg{max-width:100%;height:auto;display:block;margin:0 auto}
 .rule{background:var(--bg);border-radius:12px;padding:14px 16px;font-weight:600;margin-top:14px}
 .stack>*+*{margin-top:18px}
 [hidden]{display:none!important}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}h1::after{display:none}}
+/* --- polish & motion --- */
+body{background-image:radial-gradient(760px 360px at 88% -60px,color-mix(in srgb,var(--accent) 17%,transparent),transparent 72%);background-repeat:no-repeat}
+.card{border-radius:20px;box-shadow:0 14px 34px -20px rgba(10,20,50,.38)}
+.btn{box-shadow:0 8px 18px -10px var(--accent);transition:transform .15s,filter .2s,box-shadow .2s}
+.btn.ghost{box-shadow:none}
+.btn:active{transform:scale(.97)}
+input[type=checkbox]{accent-color:var(--accent);width:18px;height:18px;margin-right:8px;vertical-align:-3px}
+.bar{height:8px}
+.bar i{border-radius:9px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#8ef0e8));transition:width .55s cubic-bezier(.22,1,.36,1)}
+.meta span:last-child{background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent);border-radius:999px;padding:2px 11px;font-weight:600;font-size:.8rem}
+.pt,.opt{transition:transform .15s,background .2s,border-color .2s,box-shadow .2s}
+.pt:active,.opt:active{transform:scale(.96)}
+.pt[aria-pressed="true"]{box-shadow:0 8px 16px -8px var(--accent)}
+.opt{display:flex;gap:12px;align-items:flex-start}
+.opt b{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.85rem;background:var(--surface);border:1.5px solid var(--line);transition:background .2s,border-color .2s,color .2s}
+.opt[aria-pressed="true"] b{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+@media (hover:hover){.btn:hover{transform:translateY(-1px);filter:brightness(1.07)}.pt:hover,.opt:hover{border-color:var(--accent);transform:translateY(-2px)}}
+.pop{animation:pop .36s cubic-bezier(.34,1.56,.64,1)}
+.opt.pop{animation-name:popw}
+.qcard{animation:slideIn .4s cubic-bezier(.22,1,.36,1) both}
+.qcard.back{animation-name:slideBack}
+.rise{animation:rise .65s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0ms)}
+h1::after{content:"";display:inline-block;width:.07em;height:.85em;margin-left:.12em;background:var(--accent);vertical-align:-.06em;animation:blink 1.1s steps(1) infinite}
+.lvl .n,.scorelist b{font-variant-numeric:tabular-nums}
+.scalebar span{transform-origin:left;animation:fill .5s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(.35s + var(--i,0)*.12s)}
+.scorelist .track i{transform-origin:left;animation:grow .9s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(.55s + var(--i,0)*.1s)}
+.rd{transform-origin:150px 140px;animation:radar .9s cubic-bezier(.22,1,.36,1) .5s both}
+@keyframes pop{40%{transform:scale(1.12)}}
+@keyframes popw{40%{transform:scale(1.02)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(28px)}}
+@keyframes slideBack{from{opacity:0;transform:translateX(-28px)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+@keyframes blink{50%{opacity:0}}
+@keyframes fill{from{opacity:0;transform:scaleX(0)}}
+@keyframes grow{from{transform:scaleX(0)}}
+@keyframes radar{from{opacity:0;transform:scale(.05)}}
 </style>
 </head>
 <body>
@@ -93,19 +129,21 @@ var LEVELS=[
  {n:4,max:5.01,name:"Nguy cơ cao",c:"var(--l4)",desc:"Bạn khó khởi động, đánh giá hoặc tự thực hiện khi thiếu AI.",aim:"Cần giảm việc để AI thay thế tư duy."}
 ];
 var total=ITEMS.length+SCEN.length, ans=[], step=-1, app=document.getElementById("app"), collectOptIn=false, uploadAttempted=false;
+var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches,dir=1,locked=false,prevPct=0;
+function countUp(el,to){if(!el||reduce)return;var t0=null;function f(t){if(t0===null)t0=t;var p=Math.min((t-t0)/1100,1);el.textContent=(to*(1-Math.pow(1-p,3))).toFixed(2);if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function intro(){
- step=-1;ans=[];collectOptIn=false;uploadAttempted=false;
- app.innerHTML='<p class="brand">ACDI Check</p><h1>Bạn đang dùng AI, hay AI đang nghĩ thay bạn?</h1>'+
- '<p class="muted">Bài tự đánh giá mức lệ thuộc nhận thức vào AI (AI Cognitive Dependency Index) dành cho học sinh THCS. Không cấm dùng AI, chỉ giúp bạn nhận ra cách dùng của mình.</p>'+
- '<ul class="tags"><li>12 câu hỏi thang 1–5</li><li>4 tình huống</li><li>Khoảng 5 phút</li></ul>'+
- '<div class="card stack"><p>Hãy trả lời đúng với những gì bạn thường làm, không có đáp án đúng hay sai. Nếu không chọn chia sẻ, kết quả chỉ hiển thị trên máy của bạn.</p><label style="display:block;padding:12px 0"><input type="checkbox" id="shareData"> Tôi đồng ý chia sẻ ẩn danh điểm ACDI, điểm 4 thành phần, điểm tình huống và mức kết quả để tạo thống kê chung.</label><p class="muted" style="font-size:.9rem">Không thu tên, lớp, email hoặc câu trả lời từng câu. Bạn có thể bỏ chọn; bài kiểm tra vẫn hoạt động bình thường.</p><button class="btn" id="go">Bắt đầu</button></div>';
- document.getElementById("go").onclick=function(){collectOptIn=document.getElementById("shareData").checked;step=0;draw()};
+ step=-1;ans=[];collectOptIn=false;uploadAttempted=false;prevPct=0;dir=1;locked=false;
+ app.innerHTML='<p class="brand rise">ACDI Check</p><h1 class="rise" style="--d:90ms">Bạn đang dùng AI, hay AI đang nghĩ thay bạn?</h1>'+
+ '<p class="muted rise" style="--d:180ms">Bài tự đánh giá mức lệ thuộc nhận thức vào AI (AI Cognitive Dependency Index) dành cho học sinh THCS. Không cấm dùng AI, chỉ giúp bạn nhận ra cách dùng của mình.</p>'+
+ '<ul class="tags rise" style="--d:270ms"><li>12 câu hỏi thang 1–5</li><li>4 tình huống</li><li>Khoảng 5 phút</li></ul>'+
+ '<div class="card stack rise" style="--d:380ms"><p>Hãy trả lời đúng với những gì bạn thường làm, không có đáp án đúng hay sai. Nếu không chọn chia sẻ, kết quả chỉ hiển thị trên máy của bạn.</p><label style="display:block;padding:12px 0"><input type="checkbox" id="shareData"> Tôi đồng ý chia sẻ ẩn danh điểm ACDI, điểm 4 thành phần, điểm tình huống và mức kết quả để tạo thống kê chung.</label><p class="muted" style="font-size:.9rem">Không thu tên, lớp, email hoặc câu trả lời từng câu. Bạn có thể bỏ chọn; bài kiểm tra vẫn hoạt động bình thường.</p><button class="btn" id="go">Bắt đầu</button></div>';
+ document.getElementById("go").onclick=function(){collectOptIn=document.getElementById("shareData").checked;dir=1;step=0;draw()};
 }
 function draw(){
  var isLik=step<ITEMS.length, pct=Math.round(step/total*100), h;
- h='<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+total+'" aria-valuenow="'+step+'"><i style="width:'+pct+'%"></i></div>';
- h+='<div class="meta"><span>Câu '+(step+1)+' / '+total+'</span><span>'+(isLik?esc(COMP[ITEMS[step][1]].name):"Tình huống: "+esc(SCEN[step-ITEMS.length][0]))+'</span></div><div class="card">';
+ h='<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+total+'" aria-valuenow="'+step+'"><i style="width:'+prevPct+'%"></i></div>';
+ h+='<div class="meta"><span>Câu '+(step+1)+' / '+total+'</span><span>'+(isLik?esc(COMP[ITEMS[step][1]].name):"Tình huống: "+esc(SCEN[step-ITEMS.length][0]))+'</span></div><div class="card qcard'+(dir<0?' back':'')+'">';
  if(isLik){
   h+='<p class="q">'+esc(ITEMS[step][2])+'</p><div class="scale" role="group" aria-label="Mức độ đồng ý">';
   for(var v=1;v<=5;v++)h+='<button class="pt" data-v="'+v+'" aria-pressed="'+(ans[step]===v)+'" aria-label="'+v+' trên 5">'+v+'</button>';
@@ -113,14 +151,15 @@ function draw(){
  }else{
   var s=SCEN[step-ITEMS.length];
   h+='<p class="q">'+esc(s[1])+'</p>';
-  s[2].forEach(function(t,i){h+='<button class="opt" data-v="'+(4-i)+'" aria-pressed="'+(ans[step]===4-i)+'"><b>'+"ABCD"[i]+".</b> "+esc(t)+'</button>'});
+  s[2].forEach(function(t,i){h+='<button class="opt" data-v="'+(4-i)+'" aria-pressed="'+(ans[step]===4-i)+'"><b>'+"ABCD"[i]+'</b><span>'+esc(t)+'</span></button>'});
  }
  h+='<div class="nav"><button class="btn ghost" id="back">'+(step?"Quay lại":"Trang đầu")+'</button>'+(ans[step]!=null?'<button class="btn" id="next">'+(step===total-1?"Xem kết quả":"Tiếp tục")+'</button>':'<span></span>')+'</div></div>';
  app.innerHTML=h;
- [].forEach.call(app.querySelectorAll("[data-v]"),function(b){b.onclick=function(){ans[step]=+b.dataset.v;if(step===total-1){draw()}else{step++;draw()}}});
- document.getElementById("back").onclick=function(){if(step)step--;else return intro();draw()};
- var nx=document.getElementById("next");if(nx)nx.onclick=function(){if(step===total-1)result();else{step++;draw()}};
+ [].forEach.call(app.querySelectorAll("[data-v]"),function(b){b.onclick=function(){if(locked)return;ans[step]=+b.dataset.v;[].forEach.call(app.querySelectorAll("[data-v]"),function(x){x.setAttribute("aria-pressed",x===b)});b.classList.add("pop");locked=true;setTimeout(function(){locked=false;dir=1;if(step===total-1){draw()}else{step++;draw()}},reduce?0:260)}});
+ document.getElementById("back").onclick=function(){if(locked)return;dir=-1;if(step)step--;else return intro();draw()};
+ var nx=document.getElementById("next");if(nx)nx.onclick=function(){if(locked)return;dir=1;if(step===total-1)result();else{step++;draw()}};
  window.scrollTo(0,0);
+ var bi=app.querySelector(".bar i");requestAnimationFrame(function(){requestAnimationFrame(function(){if(bi)bi.style.width=pct+"%"})});prevPct=pct;
 }
 function mean(a){return a.reduce(function(x,y){return x+y},0)/a.length}
 function result(){
@@ -131,20 +170,20 @@ function result(){
  var scen=mean(ans.slice(ITEMS.length));
  var lv=LEVELS.filter(function(l){return acdi<l.max})[0];
  var top=keys.reduce(function(a,b){return comp[b]>comp[a]?b:a});
- var h='<p class="brand">ACDI Check · Kết quả của bạn</p><div class="card stack">'+
- '<div class="lvl" style="--c:'+lv.c+'"><div class="n">'+acdi.toFixed(2)+'<span class="muted" style="font-size:1rem;font-weight:500"> / 5</span></div><div class="t">Mức '+lv.n+' – '+lv.name+'</div></div>'+
- '<div class="scalebar" style="--c:'+lv.c+'" aria-hidden="true">'+[1,2,3,4].map(function(n){return '<span class="'+(n<=lv.n?"on":"")+'"></span>'}).join("")+'</div>'+
+ var h='<p class="brand">ACDI Check · Kết quả của bạn</p><div class="card stack rise">'+
+ '<div class="lvl" style="--c:'+lv.c+'"><div class="n"><span id="cnt">'+acdi.toFixed(2)+'</span><span class="muted" style="font-size:1rem;font-weight:500"> / 5</span></div><div class="t">Mức '+lv.n+' – '+lv.name+'</div></div>'+
+ '<div class="scalebar" style="--c:'+lv.c+'" aria-hidden="true">'+[1,2,3,4].map(function(n){return '<span style="--i:'+n+'" class="'+(n<=lv.n?"on":"")+'"></span>'}).join("")+'</div>'+
  '<p>'+lv.desc+' <b>Định hướng: '+lv.aim+'</b></p></div>';
- h+='<div class="card stack" style="margin-top:18px"><h2>Hồ sơ 4 thành phần</h2>'+radar(comp,keys,top)+'<ul class="scorelist">'+keys.map(function(k){return '<li class="'+(k===top?"top":"")+'"><span>'+k+' – '+COMP[k].name+'</span><b>'+comp[k].toFixed(2)+'</b><span class="track"><i style="width:'+((comp[k]-1)/4*100)+'%"></i></span></li>'}).join("")+'</ul>'+
+ h+='<div class="card stack rise" style="margin-top:18px;--d:160ms"><h2>Hồ sơ 4 thành phần</h2>'+radar(comp,keys,top)+'<ul class="scorelist">'+keys.map(function(k,i){return '<li style="--i:'+i+'" class="'+(k===top?"top":"")+'"><span>'+k+' – '+COMP[k].name+'</span><b>'+comp[k].toFixed(2)+'</b><span class="track"><i style="width:'+((comp[k]-1)/4*100)+'%"></i></span></li>'}).join("")+'</ul>'+
  '<p class="muted" style="font-size:.9rem;margin-top:12px">Điểm càng cao thì nguy cơ lệ thuộc càng lớn. Câu ID3 và JD3 đã được tự động đảo điểm.</p></div>';
- h+='<div class="card stack" style="margin-top:18px"><h2>Khuyến nghị cho bạn</h2><p><b>Thành phần nổi bật: '+top+' – '+COMP[top].name+'.</b> '+(lv.n===1?"Bạn đang làm tốt. Thành phần này là chỗ cần để ý nhất, hãy giữ thói quen: ":"")+COMP[top].tip+'</p>'+
+ h+='<div class="card stack rise" style="margin-top:18px;--d:320ms"><h2>Khuyến nghị cho bạn</h2><p><b>Thành phần nổi bật: '+top+' – '+COMP[top].name+'.</b> '+(lv.n===1?"Bạn đang làm tốt. Thành phần này là chỗ cần để ý nhất, hãy giữ thói quen: ":"")+COMP[top].tip+'</p>'+
  '<p>Điểm 4 tình huống: <b>'+scen.toFixed(2)+' / 4</b> ('+(scen>=3?"hành vi thực tế đang nghiêng về dựa vào AI":scen>=2?"hành vi thực tế ở mức trung gian":"hành vi thực tế khá chủ động")+').</p>'+
  '<div class="rule">Tự nghĩ trước – Hỏi AI sau – Kiểm chứng lại – Tự làm được.</div></div>';
 	 h+=collectOptIn?'<p id="saveStatus" class="muted" style="margin-top:16px">Đang gửi điểm tổng hợp ẩn danh…</p>':'<p class="muted" style="margin-top:16px">Bạn không chọn chia sẻ; kết quả chỉ hiển thị trên thiết bị này.</p>';
 	 h+='<div class="nav" style="margin-top:20px"><button class="btn ghost" id="print">In kết quả</button><button class="btn" id="again">Làm lại</button></div>'+
 	 '<p class="muted" style="font-size:.85rem;margin-top:18px">Kết quả nhằm giúp bạn tự nhận diện, không dùng để gắn nhãn học sinh.</p>';
 	 app.innerHTML=h;
-	 document.getElementById("again").onclick=intro;
+	 document.getElementById("again").onclick=intro;countUp(document.getElementById("cnt"),acdi);
  document.getElementById("print").onclick=function(){window.print()};
  if(collectOptIn&&!uploadAttempted){
   uploadAttempted=true;
@@ -161,9 +200,9 @@ function radar(c,keys,top){
  var s='<svg viewBox="0 0 300 280" role="img" aria-label="Biểu đồ 4 thành phần ACDI">';
  for(var g=1;g<=4;g++){s+='<polygon points="'+[0,1,2,3].map(function(i){return P(i,1+g)}).join(" ")+'" fill="none" stroke="var(--line)"/>'}
  [0,1,2,3].forEach(function(i){s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+P(i,5).split(",")[0]+'" y2="'+P(i,5).split(",")[1]+'" stroke="var(--line)"/>'});
- s+='<polygon points="'+[0,1,2,3].map(function(i){return P(i,c[keys[i]])}).join(" ")+'" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>';
+ s+='<polygon class="rd" points="'+[0,1,2,3].map(function(i){return P(i,c[keys[i]])}).join(" ")+'" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>';
  var lp=[[150,22,"middle"],[262,144,"start"],[150,262,"middle"],[38,144,"end"]];
- keys.forEach(function(k,i){var p=P(i,c[k]).split(",");s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="5" fill="'+(k===top?"var(--l4)":"var(--accent)")+'"/>'+
+ keys.forEach(function(k,i){var p=P(i,c[k]).split(",");s+='<circle class="rd" cx="'+p[0]+'" cy="'+p[1]+'" r="5" fill="'+(k===top?"var(--l4)":"var(--accent)")+'"/>'+
   '<text x="'+lp[i][0]+'" y="'+lp[i][1]+'" text-anchor="'+lp[i][2]+'" font-size="14" font-weight="700" fill="var(--ink)">'+k+'</text>'});
  return s+'</svg>';
 }
