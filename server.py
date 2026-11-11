@@ -2,10 +2,13 @@
 """Privacy-minded ACDI aggregate API using PostgreSQL and Python."""
 from __future__ import annotations
 
+import base64
+import hmac
 import json
 import math
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -22,6 +25,8 @@ HOST = os.environ.get("ACDI_HOST") or ("0.0.0.0" if os.environ.get("PORT") else 
 PORT = int(os.environ.get("PORT", os.environ.get("ACDI_PORT", "8000")))
 MIN_GROUP_SIZE = max(5, int(os.environ.get("ACDI_MIN_GROUP_SIZE", "5")))
 COMPONENTS = ("ID", "CPD", "JD", "IPL")
+# Password for the private dashboard and /api/stats. If unset, they stay locked.
+ADMIN_TOKEN = os.environ.get("ACDI_ADMIN_TOKEN", "").strip()
 
 
 def connect_db() -> psycopg.Connection:
@@ -135,6 +140,36 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
+    def is_admin(self) -> bool:
+        """HTTP Basic auth: any username, password = ACDI_ADMIN_TOKEN."""
+        if not ADMIN_TOKEN:
+            return False
+        header = self.headers.get("Authorization", "")
+        if not header.startswith("Basic "):
+            return False
+        try:
+            decoded = base64.b64decode(header[6:], validate=True).decode("utf-8")
+        except (ValueError, UnicodeDecodeError):
+            return False
+        _, _, password = decoded.partition(":")
+        return hmac.compare_digest(password.encode("utf-8"), ADMIN_TOKEN.encode("utf-8"))
+
+    def require_admin(self) -> bool:
+        if self.is_admin():
+            return True
+        if self.headers.get("Authorization"):
+            time.sleep(1)  # slow down password guessing
+        body = json.dumps({"error": "Cần đăng nhập để xem thống kê."}, ensure_ascii=False).encode("utf-8")
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="ACDI Dashboard", charset="UTF-8"')
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Robots-Tag", "noindex, nofollow")
+        self.end_headers()
+        self.wfile.write(body)
+        return False
+
     def send_json(self, status: int, value: dict[str, object]) -> None:
         self.send_bytes(
             status,
@@ -148,6 +183,8 @@ class Handler(BaseHTTPRequestHandler):
             # Keep health checks independent of Neon to avoid waking an idle DB.
             self.send_json(200, {"status": "ok"})
         elif path == "/api/stats":
+            if not self.require_admin():
+                return
             try:
                 self.send_json(200, get_stats())
             except (psycopg.Error, RuntimeError):
@@ -155,6 +192,8 @@ class Handler(BaseHTTPRequestHandler):
         elif path in ("/", "/index.html"):
             self.serve_file(STATIC / "index.html")
         elif path == "/dashboard":
+            if not self.require_admin():
+                return
             self.serve_file(STATIC / "dashboard.html")
         else:
             self.send_json(404, {"error": "Không tìm thấy đường dẫn."})
@@ -245,6 +284,8 @@ def main() -> None:
         print("Database startup check failed; verify the DATABASE_URL setting.", file=sys.stderr)
         raise SystemExit(1)
 
+    if not ADMIN_TOKEN:
+        print("ACDI_ADMIN_TOKEN is not set; dashboard and /api/stats are locked.", file=sys.stderr)
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"ACDI Check backend ready: http://{HOST}:{PORT}")
     print(f"Dashboard: http://{HOST}:{PORT}/dashboard")

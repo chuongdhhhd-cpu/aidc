@@ -99,7 +99,7 @@ function intro(){
  app.innerHTML='<p class="brand">ACDI Check</p><h1>Bạn đang dùng AI, hay AI đang nghĩ thay bạn?</h1>'+
  '<p class="muted">Bài tự đánh giá mức lệ thuộc nhận thức vào AI (AI Cognitive Dependency Index) dành cho học sinh THCS. Không cấm dùng AI, chỉ giúp bạn nhận ra cách dùng của mình.</p>'+
  '<ul class="tags"><li>12 câu hỏi thang 1–5</li><li>4 tình huống</li><li>Khoảng 5 phút</li></ul>'+
- '<div class="card stack"><p>Hãy trả lời đúng với những gì bạn thường làm, không có đáp án đúng hay sai. Nếu không chọn chia sẻ, kết quả chỉ hiển thị trên máy của bạn.</p><label style="display:block;padding:12px 0"><input type="checkbox" id="shareData"> Tôi đồng ý chia sẻ ẩn danh điểm ACDI, điểm 4 thành phần, điểm tình huống và mức kết quả để tạo thống kê chung.</label><p class="muted" style="font-size:.9rem">Không thu tên, lớp, email hoặc câu trả lời từng câu. Bạn có thể bỏ chọn; bài kiểm tra vẫn hoạt động bình thường.</p><button class="btn" id="go">Bắt đầu</button> <a class="btn ghost" href="/dashboard">Xem thống kê chung</a></div>';
+ '<div class="card stack"><p>Hãy trả lời đúng với những gì bạn thường làm, không có đáp án đúng hay sai. Nếu không chọn chia sẻ, kết quả chỉ hiển thị trên máy của bạn.</p><label style="display:block;padding:12px 0"><input type="checkbox" id="shareData"> Tôi đồng ý chia sẻ ẩn danh điểm ACDI, điểm 4 thành phần, điểm tình huống và mức kết quả để tạo thống kê chung.</label><p class="muted" style="font-size:.9rem">Không thu tên, lớp, email hoặc câu trả lời từng câu. Bạn có thể bỏ chọn; bài kiểm tra vẫn hoạt động bình thường.</p><button class="btn" id="go">Bắt đầu</button></div>';
  document.getElementById("go").onclick=function(){collectOptIn=document.getElementById("shareData").checked;step=0;draw()};
 }
 function draw(){
@@ -141,7 +141,7 @@ function result(){
  '<p>Điểm 4 tình huống: <b>'+scen.toFixed(2)+' / 4</b> ('+(scen>=3?"hành vi thực tế đang nghiêng về dựa vào AI":scen>=2?"hành vi thực tế ở mức trung gian":"hành vi thực tế khá chủ động")+').</p>'+
  '<div class="rule">Tự nghĩ trước – Hỏi AI sau – Kiểm chứng lại – Tự làm được.</div></div>';
 	 h+=collectOptIn?'<p id="saveStatus" class="muted" style="margin-top:16px">Đang gửi điểm tổng hợp ẩn danh…</p>':'<p class="muted" style="margin-top:16px">Bạn không chọn chia sẻ; kết quả chỉ hiển thị trên thiết bị này.</p>';
-	 h+='<div class="nav" style="margin-top:20px"><button class="btn ghost" id="print">In kết quả</button><a class="btn ghost" href="/dashboard">Thống kê chung</a><button class="btn" id="again">Làm lại</button></div>'+
+	 h+='<div class="nav" style="margin-top:20px"><button class="btn ghost" id="print">In kết quả</button><button class="btn" id="again">Làm lại</button></div>'+
 	 '<p class="muted" style="font-size:.85rem;margin-top:18px">Kết quả nhằm giúp bạn tự nhận diện, không dùng để gắn nhãn học sinh.</p>';
 	 app.innerHTML=h;
 	 document.getElementById("again").onclick=intro;

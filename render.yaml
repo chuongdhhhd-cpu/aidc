@@ -10,6 +10,8 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      - key: ACDI_ADMIN_TOKEN
+        sync: false
       - key: ACDI_HOST
         value: 0.0.0.0
       - key: ACDI_MIN_GROUP_SIZE
