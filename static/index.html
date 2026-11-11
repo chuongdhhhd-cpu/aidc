@@ -129,14 +129,17 @@ var LEVELS=[
  {n:4,max:5.01,name:"Nguy cơ cao",c:"var(--l4)",desc:"Bạn khó khởi động, đánh giá hoặc tự thực hiện khi thiếu AI.",aim:"Cần giảm việc để AI thay thế tư duy."}
 ];
 var total=ITEMS.length+SCEN.length, ans=[], step=-1, app=document.getElementById("app"), collectOptIn=false, uploadAttempted=false;
-var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches,dir=1,locked=false,prevPct=0;
+var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches,dir=1,locked=false,prevPct=0,done=null;
 function countUp(el,to){if(!el||reduce)return;var t0=null;function f(t){if(t0===null)t0=t;var p=Math.min((t-t0)/1100,1);el.textContent=(to*(1-Math.pow(1-p,3))).toFixed(2);if(p<1)requestAnimationFrame(f)}requestAnimationFrame(f)}
+var KEY="acdi_done_v1";
+function loadDone(){try{var d=JSON.parse(localStorage.getItem(KEY));return d&&Array.isArray(d.ans)&&d.ans.length===ITEMS.length+SCEN.length&&d.ans.every(function(a){return a>=1&&a<=5})?d:null}catch(e){return null}}
+function saveDone(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function intro(){
  step=-1;ans=[];collectOptIn=false;uploadAttempted=false;prevPct=0;dir=1;locked=false;
  app.innerHTML='<p class="brand rise">ACDI Check</p><h1 class="rise" style="--d:90ms">Bạn đang dùng AI, hay AI đang nghĩ thay bạn?</h1>'+
  '<p class="muted rise" style="--d:180ms">Bài tự đánh giá mức lệ thuộc nhận thức vào AI (AI Cognitive Dependency Index) dành cho học sinh THCS. Không cấm dùng AI, chỉ giúp bạn nhận ra cách dùng của mình.</p>'+
- '<ul class="tags rise" style="--d:270ms"><li>12 câu hỏi thang 1–5</li><li>4 tình huống</li><li>Khoảng 5 phút</li></ul>'+
+ '<ul class="tags rise" style="--d:270ms"><li>12 câu hỏi thang 1–5</li><li>4 tình huống</li><li>Khoảng 5 phút</li><li>Chỉ làm một lần</li></ul>'+
  '<div class="card stack rise" style="--d:380ms"><p>Hãy trả lời đúng với những gì bạn thường làm, không có đáp án đúng hay sai. Nếu không chọn chia sẻ, kết quả chỉ hiển thị trên máy của bạn.</p><label style="display:block;padding:12px 0"><input type="checkbox" id="shareData"> Tôi đồng ý chia sẻ ẩn danh điểm ACDI, điểm 4 thành phần, điểm tình huống và mức kết quả để tạo thống kê chung.</label><p class="muted" style="font-size:.9rem">Không thu tên, lớp, email hoặc câu trả lời từng câu. Bạn có thể bỏ chọn; bài kiểm tra vẫn hoạt động bình thường.</p><button class="btn" id="go">Bắt đầu</button></div>';
  document.getElementById("go").onclick=function(){collectOptIn=document.getElementById("shareData").checked;dir=1;step=0;draw()};
 }
@@ -179,17 +182,17 @@ function result(){
  h+='<div class="card stack rise" style="margin-top:18px;--d:320ms"><h2>Khuyến nghị cho bạn</h2><p><b>Thành phần nổi bật: '+top+' – '+COMP[top].name+'.</b> '+(lv.n===1?"Bạn đang làm tốt. Thành phần này là chỗ cần để ý nhất, hãy giữ thói quen: ":"")+COMP[top].tip+'</p>'+
  '<p>Điểm 4 tình huống: <b>'+scen.toFixed(2)+' / 4</b> ('+(scen>=3?"hành vi thực tế đang nghiêng về dựa vào AI":scen>=2?"hành vi thực tế ở mức trung gian":"hành vi thực tế khá chủ động")+').</p>'+
  '<div class="rule">Tự nghĩ trước – Hỏi AI sau – Kiểm chứng lại – Tự làm được.</div></div>';
-	 h+=collectOptIn?'<p id="saveStatus" class="muted" style="margin-top:16px">Đang gửi điểm tổng hợp ẩn danh…</p>':'<p class="muted" style="margin-top:16px">Bạn không chọn chia sẻ; kết quả chỉ hiển thị trên thiết bị này.</p>';
-	 h+='<div class="nav" style="margin-top:20px"><button class="btn ghost" id="print">In kết quả</button><button class="btn" id="again">Làm lại</button></div>'+
+	 h+=collectOptIn?'<p id="saveStatus" class="muted" style="margin-top:16px">'+(done?(done.sent?"Điểm tổng hợp của bạn đã được lưu ẩn danh trước đó.":"Lần trước chưa gửi được điểm tổng hợp; kết quả vẫn hiển thị trên thiết bị này."):"Đang gửi điểm tổng hợp ẩn danh…")+'</p>':'<p class="muted" style="margin-top:16px">Bạn không chọn chia sẻ; kết quả chỉ hiển thị trên thiết bị này.</p>';
+	 h+='<div class="nav" style="margin-top:20px"><button class="btn ghost" id="print">In kết quả</button></div>'+
 	 '<p class="muted" style="font-size:.85rem;margin-top:18px">Kết quả nhằm giúp bạn tự nhận diện, không dùng để gắn nhãn học sinh.</p>';
 	 app.innerHTML=h;
-	 document.getElementById("again").onclick=intro;countUp(document.getElementById("cnt"),acdi);
+	 countUp(document.getElementById("cnt"),acdi);if(!done){done={ans:ans.slice(),opt:collectOptIn,sent:false};saveDone(done)}
  document.getElementById("print").onclick=function(){window.print()};
  if(collectOptIn&&!uploadAttempted){
   uploadAttempted=true;
   fetch("/api/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({consent:true,acdi:acdi,components:comp,scenario:scen,level:lv.n})})
    .then(function(r){if(!r.ok)throw new Error("submit failed");return r.json()})
-   .then(function(){var el=document.getElementById("saveStatus");if(el)el.textContent="Cảm ơn bạn — điểm tổng hợp đã được lưu ẩn danh để tạo thống kê chung."})
+   .then(function(){if(done){done.sent=true;saveDone(done)}var el=document.getElementById("saveStatus");if(el)el.textContent="Cảm ơn bạn — điểm tổng hợp đã được lưu ẩn danh để tạo thống kê chung."})
    .catch(function(){var el=document.getElementById("saveStatus");if(el)el.textContent="Không gửi được dữ liệu lúc này. Kết quả của bạn vẫn hiển thị trên thiết bị; bạn không cần làm lại."});
  }
  window.scrollTo(0,0);
@@ -206,7 +209,8 @@ function radar(c,keys,top){
   '<text x="'+lp[i][0]+'" y="'+lp[i][1]+'" text-anchor="'+lp[i][2]+'" font-size="14" font-weight="700" fill="var(--ink)">'+k+'</text>'});
  return s+'</svg>';
 }
-intro();
+done=loadDone();
+if(done){ans=done.ans.slice();collectOptIn=!!done.opt;uploadAttempted=true;result()}else intro();
 </script>
 </body>
 </html>
